@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>A*</title>
+</head>
+<body>
+
+    <canvas id="graph" width="800" height="800"></canvas>
+
+    <button id="start">Start Grid Search A*</button>
+    <div>
+        <label>
+            Obstacle percentage:
+            <input id="obstacleInput" placeholder="Default 20%"/>
+        </label>
+        <button id="changeObstacles">Change Obstacles</button>
+    </div>
+    <div>
+        <label>
+            Grid Size:
+            <input id="gridSize" placeholder="Width x Height"/>
+        </label>
+        <button id="adjustSize">Change Size</button>
+    </div>
+
+<script src="aStar.js"></script>
+</body>
+</html>
