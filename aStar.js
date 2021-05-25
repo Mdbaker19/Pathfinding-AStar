@@ -8,11 +8,28 @@
     const obstacleBtn = document.getElementById("changeObstacles");
     obstacleBtn.disabled = true;
     const adjustSize = document.getElementById("adjustSize");
+    const adjustSizeInput = document.getElementById("gridSize");
     adjustSize.disabled = true;
     let wallChance = document.getElementById("obstacleInput");
 
     let openSet = [];
     let closedSet = [];
+    let path = [];
+
+    let grid = []; // 100 spots
+
+    let divider = 40;
+
+    const rows = w / divider;
+    const cols = h / divider;
+
+    adjustSize.addEventListener("click", () => {
+        divider = parseFloat(adjustSizeInput.value); // not working right now
+        fillGridWithSpots(wallChance.value ?? 20);
+    });
+    adjustSizeInput.addEventListener("input", (e) => {
+        // adjustSize.disabled = e.target.value.length <= 0;
+    });
 
     wallChance.addEventListener("input", (e) => {
         obstacleBtn.disabled = e.target.value.length <= 0;
@@ -41,7 +58,7 @@
         // need to loop through the openSet and not seen and call the this.seen to display the different color
         while(openSet.length > 0) {
 
-            await sleep(100);
+            await sleep(25);
 
             let best = 0;
             for(let i = 0; i < openSet.length; i++) {
@@ -52,10 +69,19 @@
 
             let current = openSet[best];
 
+            path = [];
+            let temp = current;
+            path.push(temp);
+            while(temp.prev) {
+                path.push(temp.prev);
+                temp = temp.prev;
+            }
+
             if(current === goal) {
-                console.log("Done");
+                console.log("Path Found");
                 break;
             }
+
 
             closedSet.push(current);
             removeSpot(openSet, current);
@@ -63,7 +89,7 @@
             let currentNeighbors = current.neighbors;
             for(let i = 0; i < currentNeighbors.length; i++) {
                 let neighbor = currentNeighbors[i];
-                if(closedSet.indexOf(neighbor) >= 0) continue;
+                if(closedSet.indexOf(neighbor) >= 0 || neighbor.isWall) continue;
                 let tentativeG = current.g + 1;
                 if(openSet.indexOf(neighbor) >= 0) {
                     if(tentativeG < neighbor.g) {
@@ -75,6 +101,7 @@
                 }
                 neighbor.h = heuristics(neighbor, goal);
                 neighbor.f = neighbor.g + neighbor.h;
+                neighbor.prev = current;
             }
 
         }
@@ -85,6 +112,8 @@
         let x = Math.abs(n.x - e.x);
         let y = Math.abs(n.y - e.y);
         return  Math.sqrt((x ** 2) + (y ** 2));
+        // return (Math.abs(n.x - e.x) + Math.abs(n.y - e.y));
+
     }
 
 
@@ -97,15 +126,11 @@
         return arr;
     }
 
-    let grid = []; // 100 spots
-
-    const rows = w / 10; // should make 10 spots with 80 x 80 size
-    const cols = h / 10; // should make 10 spots with 80 x 80 size
 
     function fillGridWithSpots(wallChance){
         grid = [];
-        for(let i = 0; i < 10; i++) {
-            grid[i] = new Array(10);
+        for(let i = 0; i < divider; i++) {
+            grid[i] = new Array(divider);
         }
         let x = 0;
         let y = 0;
@@ -133,20 +158,22 @@
         this.g = 0;
         this.h = 0;
 
+        this.prev = undefined;
+
         this.neighbors = [];
 
         this.addNeighbors = function(grid) {
-            let x = this.x / 80;
-            let y = this.y / 80;
+            let x = this.x / (divider / 2);
+            let y = this.y / (divider / 2);
             let xMax = w / cols - 1;
             let yMax = h / rows - 1;
-            if(x < xMax) { // hard coded for now
+            if(x < xMax) {
                 this.neighbors.push(grid[x + 1][y]);
             }
             if(x > 0) {
                 this.neighbors.push(grid[x - 1][y]);
             }
-            if(y < yMax) { // hard coded for now
+            if(y < yMax) {
                 this.neighbors.push(grid[x][y + 1]);
             }
             if(y > 0) {
@@ -156,38 +183,42 @@
 
         this.show = function() {
             if(this.isWall) {
-                fill(this.x, this.y, w / 10, h / 10, "#0d0c0c");
+                fill(this.x, this.y, w / divider, h / divider, "#0d0c0c");
             } else {
-                hollowFill(this.x, this.y, w / 10, h / 10, "#3d51e7");
+                hollowFill(this.x, this.y, w / divider, h / divider, "#8d92c4");
             }
         }
 
         this.start = function () {
-            fill(this.x, this.y, w / 10, h / 10, "#a20303");
+            fill(this.x, this.y, w / divider, h / divider, "#a10303");
         }
 
         this.goal = function () {
-            fill(this.x, this.y, w / 10, h / 10, "#07a307");
+            fill(this.x, this.y, w / divider, h / divider, "#07a307");
         }
 
         this.seen = function () {
-            fill(this.x, this.y, w / 10, h / 10, "#f84c02");
+            fill(this.x, this.y, w / divider, h / divider, "#f84c02");
         }
 
         this.looking = function () {
-            fill(this.x, this.y, w / 10, h / 10, "#cf02f8");
+            fill(this.x, this.y, w / divider, h / divider, "#cf02f8");
+        }
+
+        this.path = function () {
+            fill(this.x, this.y, w / divider, h / divider, "#0544fe");
         }
 
     }
 
     function createGrid() {
-        grid[0][0].start();
-        grid[grid[0].length - 1][grid.length - 1].goal();
         for(let i = 0; i < grid.length; i++) {
             for(let j = 0; j < grid[i].length; j++) {
                 grid[i][j].show();
             }
         }
+        grid[0][0].start();
+        grid[grid[0].length - 1][grid.length - 1].goal();
         for(let i = 0; i < openSet.length; i++) {
             openSet[i].seen();
         }
@@ -197,6 +228,11 @@
 
         grid[0][0].start();
         grid[grid[0].length - 1][grid.length - 1].goal();
+
+        for(let i = 0; i < path.length; i++) {
+            path[i].path();
+        }
+
     }
 
     function makeNeighbors(){
@@ -211,12 +247,12 @@
 
 
 
-    setInterval(load, 450);
+    setInterval(load, 50);
     function load(){
         draw();
     }
     function draw(){
-        fill(0, 0, w, h, "#767676");
+        fill(0, 0, w, h, "#c2bebe");
         createGrid();
     }
     function fill(x, y, w, h, c) {
@@ -225,7 +261,7 @@
     }
     function hollowFill(x, y, w, h, c) {
         cc.strokeStyle = c;
-        cc.lineWidth = 2;
+        cc.lineWidth = 1;
         cc.strokeRect(x, y, w, h);
     }
 
